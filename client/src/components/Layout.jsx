@@ -9,7 +9,7 @@ import {
 import { useAuth } from '../lib/auth'
 import { useTheme } from '../lib/theme'
 import { api } from '../lib/api'
-import { useLive } from '../lib/useLive'
+import { useLive } from '../lib/uselive'
 import { Logo } from './ui'
 import Background3D from './background3d'
 import TopSearch from './Topsearch'
@@ -52,13 +52,28 @@ function Notifications() {
   const [unread, setUnread] = useState(0)
   const [open, setOpen] = useState(false)
 
-  const load = () => api('/notifications').then(d => { setItems(d.items); setUnread(d.unread) }).catch(() => {})
-  useEffect(() => { load() }, [])
+  const load = () =>
+    api('/notifications')
+      .then(d => {
+        setItems(d.items)
+        setUnread(d.unread)
+      })
+      .catch(() => {})
+
+  useEffect(() => {
+    load()
+  }, [])
+
   useLive(load)
 
   function toggle() {
     setOpen(o => !o)
-    if (!open && unread) api('/notifications/read', { method: 'POST' }).then(() => setUnread(0)).catch(() => {})
+
+    if (!open && unread) {
+      api('/notifications/read', { method: 'POST' })
+        .then(() => setUnread(0))
+        .catch(() => {})
+    }
   }
 
   return (
@@ -69,21 +84,42 @@ function Notifications() {
         className="relative grid size-10 place-items-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95 cursor-pointer shadow-2xs"
       >
         <Bell size={18} />
+
         {unread > 0 && (
           <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-orange-600 text-[10px] font-bold text-white shadow-2xs animate-pulse">
             {unread}
           </span>
         )}
       </button>
+
       {open && (
         <div className="absolute right-0 z-50 mt-2 max-h-96 w-80 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xl text-slate-900 dark:text-white">
-          <p className="px-3 py-2 text-sm font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800">Live Notifications</p>
-          {items.length === 0 && <p className="px-3 py-5 text-sm text-slate-400 text-center">No new notifications.</p>}
+          <p className="px-3 py-2 text-sm font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800">
+            Live Notifications
+          </p>
+
+          {items.length === 0 && (
+            <p className="px-3 py-5 text-sm text-slate-400 text-center">
+              No new notifications.
+            </p>
+          )}
+
           {items.map(n => (
-            <div key={n.id} className="rounded-xl px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800 last:border-0">
-              <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">{n.title}</p>
-              <p className="whitespace-pre-line text-xs text-slate-600 dark:text-slate-300 mt-0.5">{n.body}</p>
-              <p className="mt-1 text-[11px] text-slate-400">{new Date(n.created_at).toLocaleString()}</p>
+            <div
+              key={n.id}
+              className="rounded-xl px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800 last:border-0"
+            >
+              <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                {n.title}
+              </p>
+
+              <p className="whitespace-pre-line text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                {n.body}
+              </p>
+
+              <p className="mt-1 text-[11px] text-slate-400">
+                {new Date(n.created_at).toLocaleString()}
+              </p>
             </div>
           ))}
         </div>
@@ -97,20 +133,33 @@ export default function Layout() {
   const { isDark, toggleTheme } = useTheme()
   const location = useLocation()
   const admin = user?.role === 'admin'
-  const [open, setOpen] = useState(() => window.innerWidth >= 1024)
-  const initials = (user?.name || 'Citizen').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
-  const closeOnMobile = () => { if (window.innerWidth < 1024) setOpen(false) }
 
-  // Check active for query-param links
+  const [open, setOpen] = useState(() => window.innerWidth >= 1024)
+
+  const initials = (user?.name || 'Citizen')
+    .split(' ')
+    .map(w => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
+  const closeOnMobile = () => {
+    if (window.innerWidth < 1024) setOpen(false)
+  }
+
   const isLinkActive = (to, end) => {
     if (to.includes('?')) {
       return location.pathname + location.search === to
     }
-    return end ? location.pathname === to : location.pathname.startsWith(to)
+
+    return end
+      ? location.pathname === to
+      : location.pathname.startsWith(to)
   }
 
   const renderNavItem = ([to, label, Icon, end]) => {
     const active = isLinkActive(to, end)
+
     return (
       <NavLink
         key={to}
@@ -131,6 +180,7 @@ export default function Layout() {
         >
           <Icon size={15} />
         </span>
+
         <span className="truncate">{label}</span>
       </NavLink>
     )
@@ -148,7 +198,6 @@ export default function Layout() {
         />
       )}
 
-      {/* Sidebar (Crisp White in light, Slate Obsidian in dark) */}
       <aside
         aria-label="Main menu"
         className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-white dark:bg-slate-900 border-r border-slate-200/90 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm transition-transform duration-300 ${
@@ -157,6 +206,7 @@ export default function Layout() {
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200/80 dark:border-slate-800">
           <Logo />
+
           <button
             onClick={() => setOpen(false)}
             aria-label="Close menu"
@@ -172,37 +222,38 @@ export default function Layout() {
               <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Staff Console
               </p>
+
               <div className="space-y-1">
                 {adminNav.map(renderNavItem)}
               </div>
             </div>
           ) : (
             <>
-              {/* Core Nav */}
               <div>
                 <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   Main Portal
                 </p>
+
                 <div className="space-y-1">
                   {coreCustomerNav.map(renderNavItem)}
                 </div>
               </div>
 
-              {/* Verified Sectors */}
               <div>
                 <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   Verified Sectors
                 </p>
+
                 <div className="space-y-1">
                   {sectorNav.map(renderNavItem)}
                 </div>
               </div>
 
-              {/* Citizen Resources */}
               <div>
                 <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   Citizen Resources
                 </p>
+
                 <div className="space-y-1">
                   {resourceNav.map(renderNavItem)}
                 </div>
@@ -211,7 +262,6 @@ export default function Layout() {
           )}
         </nav>
 
-        {/* User Card & Settings Button (Replacing Sign Out) */}
         <div className="space-y-2 p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/70">
           <Link
             to="/settings"
@@ -221,17 +271,18 @@ export default function Layout() {
             <span className="grid size-8 place-items-center rounded-lg bg-orange-600 text-xs font-bold text-white shadow-2xs">
               {initials}
             </span>
+
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition">
                 {user?.name}
               </p>
+
               <p className="text-[10px] uppercase font-bold tracking-wider text-orange-600 dark:text-orange-400">
                 {admin ? 'Staff Authority' : 'Verified Citizen'}
               </p>
             </div>
           </Link>
 
-          {/* Changed Sign Out to Settings as requested */}
           <Link
             to="/settings"
             onClick={closeOnMobile}
@@ -243,9 +294,7 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ${open ? 'lg:pl-64' : ''}`}>
-        {/* Sticky Header */}
         <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md transition-colors">
           <div className="flex items-center gap-3 px-4 py-2.5">
             <button
@@ -257,10 +306,8 @@ export default function Layout() {
               <Menu size={18} />
             </button>
 
-            {/* Top Search with Integrated Direct Voice Assistant */}
             <TopSearch />
 
-            {/* Quick Theme Toggle (Sun / Moon) in Header */}
             <button
               onClick={toggleTheme}
               aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -281,7 +328,6 @@ export default function Layout() {
         <Footer />
       </div>
 
-      {/* Discrete Floating Voice Assistant in Bottom Right */}
       <VoiceAssistant />
     </div>
   )
