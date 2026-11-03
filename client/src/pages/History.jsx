@@ -3,7 +3,7 @@ import { api } from '../lib/api'
 import { Card } from '../components/ui'
 import Badge from '../components/Badge'
 import RateCard from '../components/RateCard'
-import { Stars } from '../components/Stars'
+import { Stars } from '../components/stars'
 
 export default function History() {
   const [rows, setRows] = useState(null)
